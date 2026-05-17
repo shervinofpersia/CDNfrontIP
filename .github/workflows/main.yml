@@ -1,0 +1,34 @@
+name: Update Akamai & Fastly IPs
+
+on:
+  schedule:
+    - cron: '*/20 * * * *'   # هر ۲۰ دقیقه
+  workflow_dispatch:          # امکان اجرای دستی
+
+permissions:
+  contents: write            # اجازه commit و push فایل‌ها
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Generate IP lists
+        run: python scripts/generate_ips.py
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add akamai_ips.txt fastly_ips.txt combined_ips.txt
+          git diff --cached --quiet || (git commit -m "Update IP lists [skip ci]" && git push)
